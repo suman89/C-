@@ -1,7 +1,10 @@
 ﻿using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using TestConsoleApplication.Common;
@@ -14,47 +17,62 @@ namespace TestConsoleApplication
         private readonly static ILog _logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         static void Main(string[] args)
         {
-            int testId = 2150;
+            int testId = 2154;
             int enrolmentId = 477284;
             QuizAnswer quizAns = new QuizAnswer();
-            quizAns.data = new AnswerDetail();
-            quizAns.data.content_id = testId;
-            quizAns.data.enrollment_id = enrolmentId;
-            
+            //quizAns.data = new AnswerDetail();
+            //quizAns.data.content_id = testId;
+            //quizAns.data.enrollment_id = enrolmentId;
+
+            quizAns.content_id = testId;
+            quizAns.enrollment_id = enrolmentId;
+
+
             using (var client = HttpClientInitializer.GetClient())
             {
                 var quizQuestion = client.GetAsync<QuizQuestion>("get_quiz_details.json?id=" + testId).Result.Content;
                 _logger.InfoFormat("Section Count:{0}", quizQuestion.assessment.sections.Count());
-                quizAns.data.sections = new AnswerSection[quizQuestion.assessment.sections.Count()];
+                //quizAns.data.sections = new AnswerSection[quizQuestion.assessment.sections.Count()];
+                quizAns.sections = new AnswerSection[quizQuestion.assessment.sections.Count()];
+
                 for (int i = 0; i <quizQuestion.assessment.sections.Count(); i++)
                 {
                     var test = quizQuestion.assessment.sections[i];
-                    quizAns.data.sections[i] = new AnswerSection();
-                    quizAns.data.sections[i].section_id = test.id;
-                    quizAns.data.sections[i].questions = new AnswerQuestion[test.questions.Count()];
+                    //quizAns.data.sections[i] = new AnswerSection();
+                    //quizAns.data.sections[i].section_id = test.id;
+                    //quizAns.data.sections[i].questions = new AnswerQuestion[test.questions.Count()];
+                    quizAns.sections[i] = new AnswerSection();
+                    quizAns.sections[i].section_id = test.id;
+                    quizAns.sections[i].questions = new AnswerQuestion[test.questions.Count()];
                     string questionlength = string.Empty;
                     string initquestions = string.Empty;
                     string allzero = string.Empty;
                     for (int j = 0; j < test.questions.Count(); j++)
                     {
-                        quizAns.data.sections[i].questions[j] = new AnswerQuestion();
-                        quizAns.data.sections[i].questions[j].question_id = test.questions[j].id;
+                        //quizAns.data.sections[i].questions[j] = new AnswerQuestion();
+                        //quizAns.data.sections[i].questions[j].question_id = test.questions[j].id;
+                        quizAns.sections[i].questions[j] = new AnswerQuestion();
+                        quizAns.sections[i].questions[j].question_id = test.questions[j].id;
                         questionlength = questionlength + (test.questions[j].answers.Count()-1);
                         initquestions = initquestions + "0";
                     }
                     allzero = initquestions;
-                    while(Convert.ToInt64(questionlength) != Convert.ToInt64(initquestions))
+                    while(questionlength != initquestions)
                     {
                         for(int x = 0; x < test.questions.Count(); x++ )
                         {
-                            quizAns.data.sections[i].questions[x].answer_ids =new int[] { test.questions[x].answers[Convert.ToInt32(initquestions.Substring(x, 1))].id };
+                            //quizAns.data.sections[i].questions[x].answer_ids =new int[] { test.questions[x].answers[Convert.ToInt32(initquestions.Substring(x, 1))].id };
+                            quizAns.sections[i].questions[x].answer_ids = new int[] { test.questions[x].answers[Convert.ToInt32(initquestions.Substring(x, 1))].id };
+
                             if (x == test.questions.Count() -1)
                             {
                                 initquestions = DifferentCombination(questionlength, initquestions,allzero);
                             }
                         }
-                        bool isSuccess = PostAnswerDetails(quizAns);
-                        if(isSuccess)
+                        //bool isSuccess = PostAnswerDetails(quizAns);
+                        bool isSuccess = false;
+                        _logger.InfoFormat("Test sequence   : {0}", JsonConvert.SerializeObject(quizAns));
+                        if (isSuccess)
                         {
                             break;
                         }
@@ -69,15 +87,40 @@ namespace TestConsoleApplication
             bool isSuccess = false;
             try
             {
-                using (var client1 = HttpClientInitializer.GetClient(false))
+                //using (var client1 = HttpClientInitializer.GetClient(false))
+                //{
+                //    var result = client1.PostAsJsonAsync<QuizAnswer,AnswerAssesment>("post_result.json", quizAns).Result.Content;
+                //    if (result.assessment.result != "FAIL")
+                //    {
+                //        isSuccess = true;
+                //    }
+                //    return isSuccess;
+                //}
+                string webAddr = "https://play-api.fresco.me/api/v1/assessments/post_result.json";
+
+                var httpWebRequest = (HttpWebRequest)WebRequest.Create(webAddr);
+
+                httpWebRequest.ContentType = "application/json; charset=utf-8";
+                httpWebRequest.Method = "POST";
+                httpWebRequest.Headers.Add("X-Api-Key", "el8maJQpaW9mP99jRZQm5c2G01z_0X_OHBjDwQU3x68");
+                using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                 {
-                    var result = client1.PostAsJsonAsync<QuizAnswer,AnswerAssesment>("post_result.json", quizAns).Result.Content;
-                    if (result.assessment.result != "FAIL")
-                    {
-                        isSuccess = true;
-                    }
-                    return isSuccess;
+                    string json = JsonConvert.SerializeObject(quizAns);
+                    var modifiedJson = "{"+ "data" +":" + json;
+                    modifiedJson = modifiedJson + "\"}";
+                    streamWriter.Write(modifiedJson);
+                    streamWriter.Flush();
                 }
+                var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                {
+                    var responseText = streamReader.ReadToEnd();
+                    Console.WriteLine(responseText);
+
+                    //Now you have your response.
+                    //or false depending on information in the response     
+                }
+                return isSuccess;
             }
             catch(Exception ex)
             {
@@ -107,6 +150,10 @@ namespace TestConsoleApplication
                     if (m > 1)
                     {
                         initquestionschararray[m - 2] = (char)(Convert.ToInt32(initquestionschararray[m - 2]) + 1);
+                        for(int z = m-1; z < totallength; z++)
+                        {
+                            initquestionschararray[z] = '0';
+                        }
                         isAnswerWrong = true;
                     }
                     else

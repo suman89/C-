@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace TestConsoleApplication.Model
 {
-    public class QuizAnswer
-    {
-        public AnswerDetail data { get; set; }
-    }
     public class AnswerDetail
+    {
+        public QuizAnswer data { get; set; }
+    }
+    public class QuizAnswer
     {
         public int enrollment_id { get; set; }
         public int content_id { get; set; }
