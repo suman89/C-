@@ -17,8 +17,8 @@ namespace TestConsoleApplication
         private readonly static ILog _logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         static void Main(string[] args)
         {
-            int testId = 2154;
-            int enrolmentId = 477284;
+            int testId = 1431;
+            int enrolmentId = 159043;
             QuizAnswer quizAns = new QuizAnswer();
             //quizAns.data = new AnswerDetail();
             //quizAns.data.content_id = testId;
@@ -59,7 +59,8 @@ namespace TestConsoleApplication
                     allzero = initquestions;
                     while(questionlength != initquestions)
                     {
-                        for(int x = 0; x < test.questions.Count(); x++ )
+                        _logger.InfoFormat("Answer sequence : {0}", initquestions);
+                        for (int x = 0; x < test.questions.Count(); x++ )
                         {
                             //quizAns.data.sections[i].questions[x].answer_ids =new int[] { test.questions[x].answers[Convert.ToInt32(initquestions.Substring(x, 1))].id };
                             quizAns.sections[i].questions[x].answer_ids = new int[] { test.questions[x].answers[Convert.ToInt32(initquestions.Substring(x, 1))].id };
@@ -69,9 +70,10 @@ namespace TestConsoleApplication
                                 initquestions = DifferentCombination(questionlength, initquestions,allzero);
                             }
                         }
-                        //bool isSuccess = PostAnswerDetails(quizAns);
-                        bool isSuccess = false;
-                        _logger.InfoFormat("Test sequence   : {0}", JsonConvert.SerializeObject(quizAns));
+                        bool isSuccess = PostAnswerDetails(quizAns);
+                        
+                        var test1 = JsonConvert.SerializeObject(quizAns);
+                        _logger.InfoFormat("Test sequence   : {0}", test1);
                         if (isSuccess)
                         {
                             break;
@@ -87,27 +89,17 @@ namespace TestConsoleApplication
             bool isSuccess = false;
             try
             {
-                //using (var client1 = HttpClientInitializer.GetClient(false))
-                //{
-                //    var result = client1.PostAsJsonAsync<QuizAnswer,AnswerAssesment>("post_result.json", quizAns).Result.Content;
-                //    if (result.assessment.result != "FAIL")
-                //    {
-                //        isSuccess = true;
-                //    }
-                //    return isSuccess;
-                //}
                 string webAddr = "https://play-api.fresco.me/api/v1/assessments/post_result.json";
 
                 var httpWebRequest = (HttpWebRequest)WebRequest.Create(webAddr);
 
-                httpWebRequest.ContentType = "application/json; charset=utf-8";
+                httpWebRequest.ContentType = "application/x-www-form-urlencoded";
                 httpWebRequest.Method = "POST";
-                httpWebRequest.Headers.Add("X-Api-Key", "el8maJQpaW9mP99jRZQm5c2G01z_0X_OHBjDwQU3x68");
+                httpWebRequest.Headers.Add("X-Api-Key", "JvdtZCtlFBSt4qzARID3B-WO2D5_DqW76xhAUPVI0J8");
                 using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                 {
                     string json = JsonConvert.SerializeObject(quizAns);
-                    var modifiedJson = "{"+ "data" +":" + json;
-                    modifiedJson = modifiedJson + "\"}";
+                    var modifiedJson = "data=" + json;
                     streamWriter.Write(modifiedJson);
                     streamWriter.Flush();
                 }
@@ -115,10 +107,11 @@ namespace TestConsoleApplication
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                 {
                     var responseText = streamReader.ReadToEnd();
+                    AnswerAssesment answerAssesment = JsonConvert.DeserializeObject<AnswerAssesment>(responseText);
                     Console.WriteLine(responseText);
 
                     //Now you have your response.
-                    //or false depending on information in the response     
+                    isSuccess = answerAssesment.assessment.result != "FAIL";
                 }
                 return isSuccess;
             }
@@ -143,31 +136,34 @@ namespace TestConsoleApplication
             string modifiedAnswer = initquestions;
             char[] questionlengthchararray = questionlength.ToCharArray();
             char[] initquestionschararray = initquestions.ToCharArray();
-            for (int m = totallength; m != 0  ; m--)
-            {
-                if (initquestionschararray[m-1] > questionlengthchararray[m-1])
+            if (questionlength != initquestions)
+            { 
+                for (int m = totallength; m != 0  ; m--)
                 {
-                    if (m > 1)
+                    if (initquestionschararray[m-1] > questionlengthchararray[m-1])
                     {
-                        initquestionschararray[m - 2] = (char)(Convert.ToInt32(initquestionschararray[m - 2]) + 1);
-                        for(int z = m-1; z < totallength; z++)
+                        if (m > 1)
                         {
-                            initquestionschararray[z] = '0';
+                            initquestionschararray[m - 2] = (char)(Convert.ToInt32(initquestionschararray[m - 2]) + 1);
+                            for(int z = m-1; z < totallength; z++)
+                            {
+                                initquestionschararray[z] = '0';
+                            }
+                            isAnswerWrong = true;
                         }
-                        isAnswerWrong = true;
+                        else
+                        {
+                            isAnswerWrong = false;
+                            initquestionschararray[m - 1] = (char)(Convert.ToInt32(initquestionschararray[m - 1]) + 1);
+                            modifiedAnswer = new string(initquestionschararray);
+                        }
+                        break;
                     }
-                    else
-                    {
-                        isAnswerWrong = false;
-                        initquestionschararray[m - 1] = (char)(Convert.ToInt32(initquestionschararray[m - 1]) + 1);
-                        modifiedAnswer = new string(initquestionschararray);
-                    }
-                    break;
                 }
-            }
-            if (isAnswerWrong)
-            {
-                modifiedAnswer = CheckAnswerValidity(questionlength, new string(initquestionschararray));
+                if (isAnswerWrong)
+                {
+                    modifiedAnswer = CheckAnswerValidity(questionlength, new string(initquestionschararray));
+                }
             }
             return modifiedAnswer;
         }
