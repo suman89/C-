@@ -32,10 +32,11 @@ namespace FrescoPlayTest.WindowsForms
                 string initquestions = string.Empty;
                 string allzero = string.Empty;
                 string correctAnswer = string.Empty;
-
+                answerRelatedDetails.ListQuestion = new List<Question>();
                 for (int i = 0; i < quizQuestion.Assessment.Sections.Count(); i++)
                 {
                     var test = quizQuestion.Assessment.Sections[i];
+                    answerRelatedDetails.ListQuestion.AddRange(test.Questions);
                     quizAns.Sections[i] = new AnswerSection();
                     quizAns.Sections[i].SectionId = test.Id;
                     quizAns.Sections[i].Questions = new AnswerQuestion[test.Questions.Count()];
@@ -59,7 +60,8 @@ namespace FrescoPlayTest.WindowsForms
                 answerRelatedDetails.AllZeroString = allzero;
                 answerRelatedDetails.TrialCount = 0;
             }
-
+            HandleDb handleDb = new HandleDb();
+            handleDb.SaveQuestionAnswerDetails(answerRelatedDetails.QuizQuestion);
             return answerRelatedDetails;
         }
 
@@ -132,116 +134,133 @@ namespace FrescoPlayTest.WindowsForms
         public AnswerRelatedDetails GetNextAnswerCombination(AnswerRelatedDetails ansDetails,AnswerAssesment presentAssesment,AnswerAssesment prevAssesment,string previousAnswerString)
         {
             string currentAnsString = string.Empty;
-            string modifiedAnswerString = (Convert.ToInt64(ansDetails.AnswerString) + 1).ToString(ansDetails.AllZeroString);
+            var totalLength = ansDetails.AnswerCountString.Length;
             if(ansDetails.TrialCount != 0)
             {
                 ansDetails.IsChangesCorrect = presentAssesment.Assessment.TotalCorrectAnswers > prevAssesment.Assessment.TotalCorrectAnswers;
                 ansDetails.IsChangesWrong = presentAssesment.Assessment.TotalCorrectAnswers < prevAssesment.Assessment.TotalCorrectAnswers;
             }
-
-            if(ansDetails.IsChangesCorrect || ansDetails.IsChangesWrong)
+            var correctAnsStringCharArray = ansDetails.CorrectAnswerString.ToCharArray();
+            var currentAnswerStringCharArray = ansDetails.AnswerString.ToCharArray();
+            var prevAnsStringCharArray = previousAnswerString.ToCharArray();
+            var answerCountStringCharArray = ansDetails.AnswerCountString.ToCharArray();
+            currentAnsString = ansDetails.AnswerString;
+            if (ansDetails.IsChangesCorrect || ansDetails.IsChangesWrong)
             {
-                var correctAnsStringCharArray = ansDetails.CorrectAnswerString.ToCharArray();
-                var currentAnswerStringCharArray = ansDetails.AnswerString.ToCharArray();
-                var prevAnsStringCharArray = previousAnswerString.ToCharArray();
                 for (int y = 0; y < ansDetails.CorrectAnswerString.Length; y++)
                 {
                     if(currentAnswerStringCharArray[y] != prevAnsStringCharArray[y])
                     {
                         correctAnsStringCharArray[y] = ansDetails.IsChangesCorrect ? currentAnswerStringCharArray[y] : prevAnsStringCharArray[y];
+                        HandleDb handleDb = new HandleDb();
+                        handleDb.UpdateAnswerDetails(correctAnsStringCharArray[y], ansDetails.ListQuestion[y]);
                     }
                 }
                 ansDetails.CorrectAnswerString = new string(correctAnsStringCharArray);
             }
-            currentAnsString = ansDetails.AnswerString;
-            ansDetails = CheckAnswerValidity(ansDetails, modifiedAnswerString);
+
+            for (int d = totalLength ; d != 0; d--)
+            {
+                if (correctAnsStringCharArray[d - 1] == '9')
+                {
+                    if (currentAnswerStringCharArray[d - 1] < answerCountStringCharArray[d - 1])
+                        currentAnswerStringCharArray[d - 1] = (char)(currentAnswerStringCharArray[d - 1] + 1);
+                    
+                    break;
+                }
+                else
+                {
+                    currentAnswerStringCharArray[d - 1] = correctAnsStringCharArray[d - 1];
+                }
+            }
+            ansDetails.AnswerString = new string(currentAnswerStringCharArray);
             ansDetails.PreviousAnswerString = currentAnsString;
             return ansDetails;
         }
 
-        private AnswerRelatedDetails CheckAnswerValidity(AnswerRelatedDetails ansDetails,string modifiedAnswerString, int correctAnswerPosition = 100, bool isCorrectAnswerCheckedOnce = false)
-        {
-            var totalLength = ansDetails.AnswerCountString.Length;
-            bool isAnswerWrong = false;
-            string modifiedAnswer = modifiedAnswerString;
-            char[] ansCountCharArray = ansDetails.AnswerCountString.ToCharArray();
-            char[] modifiedAnswerCharArray = modifiedAnswerString.ToCharArray();
-            char[] answerCharArray = ansDetails.AnswerString.ToCharArray();
-            char[] correctAnswerCharArray = ansDetails.CorrectAnswerString.ToCharArray();
-            if (ansDetails.AnswerCountString != modifiedAnswerString)
-            {
-                for (int m = totalLength; m != 0; m--)
-                {
-                    if(correctAnswerCharArray[m - 1] != '9')
-                    {
-                        if (isCorrectAnswerCheckedOnce && correctAnswerPosition <= m-1)
-                        {
+        //private AnswerRelatedDetails CheckAnswerValidity(AnswerRelatedDetails ansDetails,string modifiedAnswerString, int correctAnswerPosition = 100, bool isCorrectAnswerCheckedOnce = false)
+        //{
+        //    var totalLength = ansDetails.AnswerCountString.Length;
+        //    bool isAnswerWrong = false;
+        //    string modifiedAnswer = modifiedAnswerString;
+        //    char[] ansCountCharArray = ansDetails.AnswerCountString.ToCharArray();
+        //    char[] modifiedAnswerCharArray = modifiedAnswerString.ToCharArray();
+        //    char[] answerCharArray = ansDetails.AnswerString.ToCharArray();
+        //    char[] correctAnswerCharArray = ansDetails.CorrectAnswerString.ToCharArray();
+        //    if (ansDetails.AnswerCountString != modifiedAnswerString)
+        //    {
+        //        for (int m = totalLength; m != 0; m--)
+        //        {
+        //            if(correctAnswerCharArray[m - 1] != '9')
+        //            {
+        //                if (isCorrectAnswerCheckedOnce && correctAnswerPosition <= m-1)
+        //                {
                             
-                        }
-                        else
-                        {
-                            modifiedAnswerCharArray[m - 2] = (char)(Convert.ToInt32(modifiedAnswerCharArray[m - 2]) + 1);
-                            isAnswerWrong = true;
+        //                }
+        //                else
+        //                {
+        //                    modifiedAnswerCharArray[m - 2] = (char)(Convert.ToInt32(modifiedAnswerCharArray[m - 2]) + 1);
+        //                    isAnswerWrong = true;
                             
-                        }
-                        for (int z = m - 1; z < totalLength; z++)
-                        {
-                            if (correctAnswerCharArray[z] != '9')
-                            {
-                                modifiedAnswerCharArray[z] = correctAnswerCharArray[z];
-                            }
-                            else
-                            {
-                                modifiedAnswerCharArray[z] = '0';
-                            }
-                        }
-                        modifiedAnswer = new string(modifiedAnswerCharArray);
-                        correctAnswerPosition = m - 1;
-                        isCorrectAnswerCheckedOnce = true;
-                        if (isAnswerWrong)
-                        {
-                            break;
-                        }
-                    }
-                    if (modifiedAnswerCharArray[m - 1] > ansCountCharArray[m - 1] )
-                    {
-                        if (m > 1)
-                        {
+        //                }
+        //                for (int z = m - 1; z < totalLength; z++)
+        //                {
+        //                    if (correctAnswerCharArray[z] != '9')
+        //                    {
+        //                        modifiedAnswerCharArray[z] = correctAnswerCharArray[z];
+        //                    }
+        //                    else
+        //                    {
+        //                        modifiedAnswerCharArray[z] = '0';
+        //                    }
+        //                }
+        //                modifiedAnswer = new string(modifiedAnswerCharArray);
+        //                correctAnswerPosition = m - 1;
+        //                isCorrectAnswerCheckedOnce = true;
+        //                if (isAnswerWrong)
+        //                {
+        //                    break;
+        //                }
+        //            }
+        //            if (modifiedAnswerCharArray[m - 1] > ansCountCharArray[m - 1] )
+        //            {
+        //                if (m > 1)
+        //                {
 
-                            modifiedAnswerCharArray[m - 2] = (char)(Convert.ToInt32(modifiedAnswerCharArray[m - 2]) + 1);
-                            isAnswerWrong = true;
+        //                    modifiedAnswerCharArray[m - 2] = (char)(Convert.ToInt32(modifiedAnswerCharArray[m - 2]) + 1);
+        //                    isAnswerWrong = true;
                             
-                            for (int z = m - 1; z < totalLength; z++)
-                            {
-                                if (correctAnswerCharArray[z] != '9')
-                                {
-                                    modifiedAnswerCharArray[z] = correctAnswerCharArray[z];
-                                }
-                                else
-                                { 
-                                    modifiedAnswerCharArray[z] = '0';
-                                }
-                            }
-                            modifiedAnswer = new string(modifiedAnswerCharArray);
+        //                    for (int z = m - 1; z < totalLength; z++)
+        //                    {
+        //                        if (correctAnswerCharArray[z] != '9')
+        //                        {
+        //                            modifiedAnswerCharArray[z] = correctAnswerCharArray[z];
+        //                        }
+        //                        else
+        //                        { 
+        //                            modifiedAnswerCharArray[z] = '0';
+        //                        }
+        //                    }
+        //                    modifiedAnswer = new string(modifiedAnswerCharArray);
 
 
-                        }
-                        else
-                        {
-                            isAnswerWrong = false;
-                            modifiedAnswerCharArray[m - 1] = (char)(Convert.ToInt32(modifiedAnswerCharArray[m - 1]) + 1);
-                            modifiedAnswer = new string(modifiedAnswerCharArray);
-                        }
-                        break;
-                    }
-                }
-                if (isAnswerWrong)
-                {
-                    ansDetails = CheckAnswerValidity(ansDetails,modifiedAnswer ,correctAnswerPosition,isCorrectAnswerCheckedOnce);
-                }
-            }
-            ansDetails.AnswerString = modifiedAnswer;
-            return ansDetails;
-        }
+        //                }
+        //                else
+        //                {
+        //                    isAnswerWrong = false;
+        //                    modifiedAnswerCharArray[m - 1] = (char)(Convert.ToInt32(modifiedAnswerCharArray[m - 1]) + 1);
+        //                    modifiedAnswer = new string(modifiedAnswerCharArray);
+        //                }
+        //                break;
+        //            }
+        //        }
+        //        if (isAnswerWrong)
+        //        {
+        //            ansDetails = CheckAnswerValidity(ansDetails,modifiedAnswer ,correctAnswerPosition,isCorrectAnswerCheckedOnce);
+        //        }
+        //    }
+        //    ansDetails.AnswerString = modifiedAnswer;
+        //    return ansDetails;
+        //}
     }
 }

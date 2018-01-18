@@ -20,6 +20,6 @@ namespace FrescoPlayTest.WindowsForms.Models
         public string CorrectAnswerString { get; set; }
         public string AllZeroString { get; set; }
         public int TrialCount { get; set; }
-        
+        public List<Question> ListQuestion { get; set; }
     }
 }

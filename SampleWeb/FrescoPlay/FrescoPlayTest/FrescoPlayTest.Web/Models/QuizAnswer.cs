@@ -14,6 +14,7 @@ namespace FrescoPlayTest.Web.Models
         public int EnrollmentId { get; set; }
         [JsonProperty("content_id")]
         public int ContentId { get; set; }
+        [JsonProperty("sections")]
         public AnswerSection[] Sections { get; set; }
     }
 
@@ -21,6 +22,7 @@ namespace FrescoPlayTest.Web.Models
     {
         [JsonProperty("section_id")]
         public int SectionId { get; set; }
+        [JsonProperty("questions")]
         public AnswerQuestion[] Questions { get; set; }
     }
 

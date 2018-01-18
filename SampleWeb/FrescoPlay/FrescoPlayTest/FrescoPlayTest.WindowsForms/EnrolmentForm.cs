@@ -29,6 +29,7 @@ namespace FrescoPlayTest.WindowsForms
         {
             this.TrialCount.Show();
             this.TrialCountValue.Show();
+            this.button1.Enabled = false;
             HandelQuiz handleQuiz = new HandelQuiz();
             AnswerRelatedDetails ansDetails = await handleQuiz.GetQuestionAndFirstAnswer(new EnrollmentDetails() { ApiKey = this.ApiKeyValue.Text, ContentId = Convert.ToInt32(this.ContentIdValue.Text.Trim()), EnrolmentId = Convert.ToInt32(this.EnrolmentIdValue.Text.Trim()) });
             ansDetails.PreviousAnswerString = ansDetails.AnswerString;
@@ -53,6 +54,7 @@ namespace FrescoPlayTest.WindowsForms
             if (isSuccess)
             {
                 MessageBox.Show("Quiz completed after " + (ansDetails.TrialCount + 1) + "trial");
+                this.button1.Enabled = true;
             }
 
         }

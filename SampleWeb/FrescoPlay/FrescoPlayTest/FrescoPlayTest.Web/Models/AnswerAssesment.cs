@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,20 +10,27 @@ namespace FrescoPlayTest.Web.Models
 
     public class AnswerAssesment
     {
-        public AssessmentScore assessment { get; set; }
+        public AssessmentScore Assessment { get; set; }
     }
 
     public class AssessmentScore
     {
-        public int user_score { get; set; }
-        public int passing_marks { get; set; }
-        public string result { get; set; }
-        public float percentile { get; set; }
-        public int total_correct_answers { get; set; }
-        public int quiz_marks { get; set; }
-        public int total_questions_attempted { get; set; }
-        public object[] incorrect_questions { get; set; }
+        [JsonProperty("user_score")]
+        public int UserScore { get; set; }
+        [JsonProperty("passing_marks")]
+        public int PassingMarks { get; set; }
+        public string Result { get; set; }
+        public float Percentile { get; set; }
+        [JsonProperty("total_correct_answers")]
+        public int TotalCorrectAnswers { get; set; }
+        [JsonProperty("quiz_marks")]
+        public int QuizMarks { get; set; }
+        [JsonProperty("total_questions_attempted")]
+        public int TotalQuestionsAttempted { get; set; }
+        [JsonProperty("incorrect_questions")]
+        public object[] IncorrectQuestions { get; set; }
         public string miles { get; set; }
-        public int miles_earned { get; set; }
+        [JsonProperty("miles_earned")]
+        public int MilesEarned { get; set; }
     }
 }

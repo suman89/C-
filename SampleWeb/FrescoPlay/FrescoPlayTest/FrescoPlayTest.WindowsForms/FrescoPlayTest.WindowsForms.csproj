@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FrescoPlayTest.WindowsForms</RootNamespace>
     <AssemblyName>FrescoPlayTest.WindowsForms</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -72,6 +72,7 @@
       <DependentUpon>EnrolmentForm.cs</DependentUpon>
     </Compile>
     <Compile Include="HandelQuiz.cs" />
+    <Compile Include="HandleDb.cs" />
     <Compile Include="Models\AnswerAssesment.cs" />
     <Compile Include="Models\AnswerRelatedDetails.cs" />
     <Compile Include="Models\EnrollmentDetails.cs" />
@@ -105,6 +106,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DataAccessHandler\DataAccessHandler.csproj">
+      <Project>{af01dd41-e5d7-4810-a070-0b0e853e86b3}</Project>
+      <Name>DataAccessHandler</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Mode\Mode.csproj">
+      <Project>{c775fc42-2577-4ca1-8c6a-9a4d7604a67e}</Project>
+      <Name>Mode</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
