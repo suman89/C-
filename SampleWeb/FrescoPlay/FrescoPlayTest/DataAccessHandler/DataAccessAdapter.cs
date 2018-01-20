@@ -144,7 +144,7 @@ namespace DataAccessHandler
             if (bool.TryParse(item, out r1) || Int32.TryParse(item, out r2))
                 return item ;
             else
-                return "'" + item.Replace(">", "(>)").Replace("<", "(<)").Replace(".", "(.)").Replace("*", "(*)").Replace(":", "(:)").Replace("^", "(^)").Replace("+", "(+)").Replace("\\", "(\\)").Replace("/", "(/)").Replace("=", "(=)").Replace("&", "(&)") + "'";
+                return "'" + item.Replace(">", "(>)").Replace("<", "(<)").Replace(".", "(.)").Replace("*", "(*)").Replace(":", "(:)").Replace("^", "(^)").Replace("+", "(+)").Replace("\\", "(\\)").Replace("/", "(/)").Replace("=", "(=)").Replace("&", "(&)").Replace(",","").Replace("'","").Replace("?","") + "'";
         }
         #endregion
 
@@ -323,7 +323,7 @@ namespace DataAccessHandler
                 throw ex;
             }
             finally
-            {
+            { 
                 Oledbconnection.Close();
             }
         }
@@ -418,6 +418,140 @@ namespace DataAccessHandler
             {
                 throw;
             }
+        }
+
+        public static bool InsertEntity<T>(T entity) where T : IEntity<T>
+        {
+            try
+            {
+                if (Oledbconnection == null)
+                {
+                    connectionBuilder.Add("Jet OLEDB:Database Password", _Password);
+                    Oledbconnection = new OleDbConnection();
+                    Oledbconnection.ConnectionString = connectionBuilder.ConnectionString;
+                }
+
+                string Insert = "INSERT INTO " + _perfix + ((IEntity<T>)entity).EntityName + _suffix;
+                string columns = "(";
+                string values = "VALUES(";
+                Dictionary<string, object> infos = GetInfo(entity);
+                //Read Column Names
+                foreach (var item in infos)
+                {
+                    if (item.Value != null && item.Value != "" && !entity.PrimaryKey.Exists(p => p.Name == item.Key))
+                    {
+                        columns += item.Key + ",";
+                        bool r1 = false;
+                        Int32 r2 = 0;
+                        if (bool.TryParse(item.Value.ToString(), out r1) || Int32.TryParse(item.Value.ToString(), out r2))
+                            values += item.Value.ToString() + ",";
+                        else
+                            values += "?" + ",";
+                    }
+                }
+                columns = columns.Remove(columns.Length - 1, 1) + ") ";
+                values = values.Remove(values.Length - 1, 1) + ") ";
+                Insert += columns + values;
+
+
+                OleDbCommand Com = new OleDbCommand(Insert, Oledbconnection);
+                if (Oledbconnection.State == ConnectionState.Open)
+                    Oledbconnection.Close();
+                Oledbconnection.Open();
+                foreach (var item in infos)
+                {
+                    if (item.Value != null && item.Value != "" && !entity.PrimaryKey.Exists(p => p.Name == item.Key))
+                    {
+                        bool r1 = false;
+                        Int32 r2 = 0;
+                        if (bool.TryParse(item.Value.ToString(), out r1) || Int32.TryParse(item.Value.ToString(), out r2))
+                        { }
+                        else
+                        {
+                            Com.Parameters.Add("@" + item.Key, OleDbType.LongVarChar).Value = item.Value;
+                        }
+                    }
+                }
+                Com.ExecuteNonQuery();
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                Oledbconnection.Close();
+            }
+            return true;
+        }
+
+
+        public static bool UpdateEntity<T>(T entity, string where) where T : IEntity<T>
+        {
+            try
+            {
+                if (Oledbconnection == null)
+                {
+                    connectionBuilder.Add("Jet OLEDB:Database Password", _Password);
+                    Oledbconnection = new OleDbConnection();
+                    Oledbconnection.ConnectionString = connectionBuilder.ConnectionString;
+                }
+
+                string Update = "UPDATE " + _perfix + entity.EntityName + _suffix + " SET ";
+                string Insert = "INSERT INTO " + _perfix + ((IEntity<T>)entity).EntityName + _suffix;
+                string columns = "(";
+                string values = "VALUES(";
+                Dictionary<string, object> infos = GetInfo(entity);
+                //Read Column Names
+                foreach (var item in infos)
+                {
+                    if (item.Value != null && item.Value != "" && !entity.PrimaryKey.Exists(p => p.Name == item.Key))
+                    {
+                        columns += item.Key + ",";
+                        bool r1 = false;
+                        Int32 r2 = 0;
+                        if (bool.TryParse(item.Value.ToString(), out r1) || Int32.TryParse(item.Value.ToString(), out r2))
+                            values += item.Value.ToString() + ",";
+                        else
+                            values += "?" + ",";
+                    }
+                }
+                columns = columns.Remove(columns.Length - 1, 1) + ") ";
+                values = values.Remove(values.Length - 1, 1) + ") ";
+                Insert += columns + values;
+
+
+                OleDbCommand Com = new OleDbCommand(Insert, Oledbconnection);
+                if (Oledbconnection.State == ConnectionState.Open)
+                    Oledbconnection.Close();
+                Oledbconnection.Open();
+                foreach (var item in infos)
+                {
+                    if (item.Value != null && item.Value != "" && !entity.PrimaryKey.Exists(p => p.Name == item.Key))
+                    {
+                        bool r1 = false;
+                        Int32 r2 = 0;
+                        if (bool.TryParse(item.Value.ToString(), out r1) || Int32.TryParse(item.Value.ToString(), out r2))
+                        { }
+                        else
+                        {
+                            Com.Parameters.Add("@" + item.Key, OleDbType.LongVarChar).Value = item.Value;
+                        }
+                    }
+                }
+                Com.ExecuteNonQuery();
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                Oledbconnection.Close();
+            }
+            return true;
         }
 
         #endregion

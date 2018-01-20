@@ -110,6 +110,7 @@ namespace DataAccessHandler
                 Collection.Remove(entity);
             return result;
         }
+
         public virtual bool Insert(T entity)
         {
             bool result = DataAccessAdapter.DoEntity(entity, SqlCommand.Insert, "");

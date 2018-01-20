@@ -38,6 +38,15 @@ namespace Mode
             set { _aDetails = value; }
         }
 
+        int _quesId;
+        [DisplayName("Quest Id")]
+        [Category("Column")]
+        public int QuestId
+        {
+            get { return _quesId; }
+            set { _quesId = value; }
+        }
+
         bool _isCorrect;
         [DisplayName("Is Correct Answer")]
         [Category("Column")]
@@ -47,14 +56,6 @@ namespace Mode
             set { _isCorrect = value; }
         }
 
-        int _qId;
-        [DisplayName("Question Id")]
-        [Category("Column")]
-        public int QuestionId
-        {
-            get { return _qId; }
-            set { _qId = value; }
-        }
         #endregion
 
         #region Initialize

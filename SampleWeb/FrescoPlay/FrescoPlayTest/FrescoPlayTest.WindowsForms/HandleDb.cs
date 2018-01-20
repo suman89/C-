@@ -47,7 +47,7 @@ namespace FrescoPlayTest.WindowsForms
                         var tempAns = new Mode.Answer();
                         tempAns.AnswerId = ans.Id;
                         tempAns.AnswerDetails = ans.AnswerDetail;
-                        tempAns.QuestionId = ques.Id;
+                        tempAns.QuestId = ques.Id;
                         tempAns.IsCorrect = false;
                         if (answers.Where(a => a.AnswerId == ans.Id).Count() == 0)
                         {
@@ -67,7 +67,7 @@ namespace FrescoPlayTest.WindowsForms
             var tempAns = new Mode.Answer();
             tempAns.AnswerId = question.Answers[ansOption].Id;
             tempAns.AnswerDetails = question.Answers[ansOption].AnswerDetail;
-            tempAns.QuestionId = question.Id;
+            tempAns.QuestId = question.Id;
             tempAns.IsCorrect = true;
             tempAns.ID = answers.First(a => a.AnswerId == tempAns.AnswerId).ID;
             Mode.Context.Instance.Answer.Update(tempAns);

@@ -1,4 +1,5 @@
-﻿using FrescoPlayTest.Web.Models;
+﻿using FrescoPlayTest.Web.Common;
+using FrescoPlayTest.Web.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace FrescoPlayTest.Web
         public HandleDb()
         {
             #region Initialize DataAccessAdapter
-            string datasource = @"../../../Testdb.mdb";
+            string datasource = StaticDetails.DataSource;
             string password = "";
             DataAccessHandler.DataAccessAdapter.Initialize(datasource, password);
             #endregion
@@ -38,20 +39,29 @@ namespace FrescoPlayTest.Web
                     tempQues.QuestionId = ques.Id;
                     tempQues.QuestionDetails = ques.QuestionDetail;
                     tempQues.QuestionType = ques.QuestionType;
+                    tempQues.TopicName = quizQuestion.Assessment.Name;
                     if (questions.Where(a => a.QuestionId == ques.Id).Count() == 0)
                     {
-                        Mode.Context.Instance.Question.Insert(tempQues);
+                       var isSuccess = DataAccessHandler.DataAccessAdapter.InsertEntity<Mode.Question>(tempQues);
+                        if (isSuccess)
+                        {
+                            questions.Add(tempQues);
+                        }
                     }
                     foreach(var ans in ques.Answers)
                     {
                         var tempAns = new Mode.Answer();
                         tempAns.AnswerId = ans.Id;
                         tempAns.AnswerDetails = ans.AnswerDetail;
-                        tempAns.QuestionId = ques.Id;
+                        tempAns.QuestId = ques.Id;
                         tempAns.IsCorrect = false;
                         if (answers.Where(a => a.AnswerId == ans.Id).Count() == 0)
                         {
-                            Mode.Context.Instance.Answer.Insert(tempAns);
+                            var isSuccess = DataAccessHandler.DataAccessAdapter.InsertEntity<Mode.Answer>(tempAns);
+                            if (isSuccess)
+                            {
+                                answers.Add(tempAns);
+                            }
                         }
                     }
                 }
@@ -61,16 +71,40 @@ namespace FrescoPlayTest.Web
 
         public void UpdateAnswerDetails(char v, Question question)
         {
-            DataAccessHandler.Collections.Entities<Mode.Answer> answers = Mode.Context.Instance.Answer.Collection;
+            //DataAccessHandler.Collections.Entities<Mode.Answer> answers = Mode.Context.Instance.Answer.Collection;
 
             int ansOption = Convert.ToInt32(new string(v, 1));
-            var tempAns = new Mode.Answer();
-            tempAns.AnswerId = question.Answers[ansOption].Id;
-            tempAns.AnswerDetails = question.Answers[ansOption].AnswerDetail;
-            tempAns.QuestionId = question.Id;
-            tempAns.IsCorrect = true;
-            tempAns.ID = answers.First(a => a.AnswerId == tempAns.AnswerId).ID;
-            Mode.Context.Instance.Answer.Update(tempAns);
+            //var tempAns = new Mode.Answer();
+            //tempAns.AnswerId = question.Answers[ansOption].Id;
+            //tempAns.AnswerDetails = question.Answers[ansOption].AnswerDetail;
+            //tempAns.QuestId = question.Id;
+            //tempAns.IsCorrect = true;
+            //tempAns.ID = answers.First(a => a.AnswerId == tempAns.AnswerId).ID;
+            DataAccessHandler.DataAccessAdapter.ExecuteNoneQuery("UPDATE tblAnswer SET IsCorrect = True where AnswerId =" + question.Answers[ansOption].Id);
+            //Mode.Context.Instance.Answer.Update(tempAns);
+        }
+
+        public int FindAnswerId(int questionId)
+        {
+            //DataAccessHandler.Collections.Entities<Mode.Answer> answers = Mode.Context.Instance.Answer.Collection;
+            
+            try
+            {
+                List<Dictionary<string, object>> entityDictionary = null;
+                bool isSuccess = DataAccessHandler.DataAccessAdapter.ExecuteReader("SELECT * from tblAnswer WHERE IsCorrect = True AND QuestId ="+questionId,out entityDictionary);
+                if (isSuccess)
+                {
+                    if(entityDictionary.Count > 0)
+                    {
+                        return Convert.ToInt32(entityDictionary.First()["AnswerId"]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return 0;
         }
     }
 }

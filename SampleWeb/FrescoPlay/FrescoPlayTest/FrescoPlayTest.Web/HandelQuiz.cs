@@ -21,6 +21,7 @@ namespace FrescoPlayTest.Web
         {
             AnswerRelatedDetails answerRelatedDetails = new AnswerRelatedDetails();
             QuizAnswer quizAns = new QuizAnswer();
+            HandleDb handleDb = new HandleDb();
             quizAns.ContentId = enrollmentDetails.ContentId;
             quizAns.EnrollmentId = enrollmentDetails.EnrolmentId;
             using (var client = HttpClientInitializer.GetClient(enrollmentDetails.ApiKey, false))
@@ -45,8 +46,19 @@ namespace FrescoPlayTest.Web
                         quizAns.Sections[i].Questions[j] = new AnswerQuestion();
                         quizAns.Sections[i].Questions[j].QuestionId = test.Questions[j].Id;
                         questionlength = questionlength + (test.Questions[j].Answers.Count() - 1);
-                        initquestions = initquestions + "0";
-                        correctAnswer = correctAnswer + "9";
+                        var ansId = handleDb.FindAnswerId(test.Questions[j].Id);
+                        var answer = test.Questions[j].Answers.FirstOrDefault(a => a.Id == ansId);
+                        if (ansId != 0 && answer != null)
+                        {
+                            int index = Array.IndexOf(test.Questions[j].Answers, answer);
+                            initquestions = initquestions + index;
+                            correctAnswer = correctAnswer + index;
+                        }
+                        else
+                        {
+                            initquestions = initquestions + "0";
+                            correctAnswer = correctAnswer + "9";
+                        }
                         quizAns.Sections[i].Questions[j].AnswerIds = new int[] { test.Questions[j].Answers[0].Id };
                     }
                     allzero = initquestions;
@@ -60,7 +72,7 @@ namespace FrescoPlayTest.Web
                 answerRelatedDetails.AllZeroString = allzero;
                 answerRelatedDetails.TrialCount = 0;
             }
-            HandleDb handleDb = new HandleDb();
+            
             handleDb.SaveQuestionAnswerDetails(answerRelatedDetails.QuizQuestion);
             return answerRelatedDetails;
         }
@@ -165,6 +177,14 @@ namespace FrescoPlayTest.Web
                 {
                     if (currentAnswerStringCharArray[d - 1] < answerCountStringCharArray[d - 1])
                         currentAnswerStringCharArray[d - 1] = (char)(currentAnswerStringCharArray[d - 1] + 1);
+                    else
+                    {
+                        if( d-1 > 0)
+                        { 
+                            currentAnswerStringCharArray[d - 2] = (char)(currentAnswerStringCharArray[d - 2] + 1);
+                            correctAnsStringCharArray[d - 1] = currentAnswerStringCharArray[d - 1];
+                        }
+                    }
                     
                     break;
                 }
@@ -173,6 +193,7 @@ namespace FrescoPlayTest.Web
                     currentAnswerStringCharArray[d - 1] = correctAnsStringCharArray[d - 1];
                 }
             }
+            ansDetails.CorrectAnswerString = new string(correctAnsStringCharArray);
             ansDetails.AnswerString = new string(currentAnswerStringCharArray);
             ansDetails.PreviousAnswerString = currentAnsString;
             return ansDetails;
